@@ -1,0 +1,2434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Longest Path Visualizer | NP-Complete Project</title>
+  <style>
+    :root {
+      --bg: #050814;
+      --bg-soft: #071426;
+      --panel: rgba(13, 27, 47, 0.92);
+      --panel-solid: #0d1b2f;
+      --panel-2: #132640;
+      --panel-3: #071527;
+      --text: #edf5ff;
+      --muted: #a7b8cf;
+      --muted-2: #70839c;
+      --line: rgba(255,255,255,0.10);
+      --accent: #67d7ff;
+      --accent-2: #55b9ff;
+      --green: #8cffad;
+      --yellow: #ffd166;
+      --red: #ff6b6b;
+      --purple: #c792ea;
+      --orange: #ffad66;
+      --node: #152841;
+      --edge: #5f728b;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(103, 215, 255, 0.16), transparent 34%),
+        radial-gradient(circle at 88% 4%, rgba(199, 146, 234, 0.12), transparent 34%),
+        radial-gradient(circle at 50% 100%, rgba(140, 255, 173, 0.05), transparent 34%),
+        linear-gradient(145deg, #030711 0%, #06101f 55%, #071426 100%);
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 8, 20, 0.86);
+      backdrop-filter: blur(14px);
+    }
+
+    .header-inner {
+      max-width: 1560px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 5px;
+      font-size: clamp(22px, 3vw, 32px);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .top-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      background: rgba(7, 21, 39, .86);
+      color: #d9ecff;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      gap: 18px;
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-pad { padding: 16px; }
+
+    .controls {
+      position: sticky;
+      top: 92px;
+      height: calc(100vh - 110px);
+      overflow: auto;
+    }
+
+    .controls::-webkit-scrollbar, .trace-box::-webkit-scrollbar, textarea::-webkit-scrollbar { width: 8px; }
+    .controls::-webkit-scrollbar-thumb, .trace-box::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb {
+      background: rgba(103, 215, 255, .28);
+      border-radius: 999px;
+    }
+
+    label {
+      display: block;
+      margin: 13px 0 6px;
+      color: #dcecff;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    textarea, input, select, button {
+      width: 100%;
+      border-radius: 14px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    textarea, input, select {
+      background: #071527;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.14);
+      padding: 10px 11px;
+      outline: none;
+      transition: border .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: rgba(103,215,255,.8);
+      box-shadow: 0 0 0 3px rgba(103,215,255,.10);
+      background: #091a31;
+    }
+
+    textarea {
+      height: 145px;
+      resize: vertical;
+      font-family: Consolas, ui-monospace, monospace;
+      line-height: 1.35;
+    }
+
+    button {
+      border: 0;
+      padding: 10px 12px;
+      margin-top: 9px;
+      cursor: pointer;
+      font-weight: 900;
+      color: #001522;
+      background: linear-gradient(135deg, #1f9bcc, #68dcff);
+      transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+      box-shadow: 0 10px 25px rgba(55, 180, 245, .12);
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    button:active { transform: translateY(0px) scale(.99); }
+    button.secondary {
+      background: #162941;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: none;
+    }
+    button.warn { background: linear-gradient(135deg, #ffd166, #ffb703); color: #221600; }
+    button.bad { background: linear-gradient(135deg, #ff6b6b, #ef476f); color: white; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+    .help {
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: rgba(7, 21, 39, .95);
+      border: 1px solid rgba(140,255,173,.18);
+      color: var(--green);
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .small-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 11px;
+    }
+
+    .mini {
+      border: 1px solid var(--line);
+      background: rgba(7,21,39,.9);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7,21,39,.55);
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      width: auto;
+      margin: 0;
+      box-shadow: none;
+      background: rgba(22, 41, 65, .86);
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 9px 12px;
+      border-radius: 999px;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, rgba(33, 153, 204, .95), rgba(104,220,255,.95));
+      color: #001522;
+      border-color: transparent;
+    }
+
+    .panel { display: none; padding: 16px; }
+    .panel.active { display: block; animation: fadeIn .22s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr);
+      gap: 18px;
+    }
+
+    svg {
+      width: 100%;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 25% 10%, rgba(103,215,255,.08), transparent 30%),
+        #071527;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    #graphSvg { height: 490px; }
+    #searchTreeSvg { height: 300px; margin-top: 10px; }
+
+    .progress-wrap {
+      margin-top: 12px;
+      background: rgba(7,21,39,.96);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      height: 14px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green), var(--accent), var(--purple));
+      transition: width .22s ease;
+      border-radius: 999px;
+    }
+
+    .complexity-card {
+      margin-top: 12px;
+      background: rgba(7,21,39,.96);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .complexity-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .gauge {
+      height: 12px;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .gauge-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+      transition: width .25s ease;
+    }
+
+    .shortcut-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .quiz-wrap {
+      display: grid;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .quiz-card {
+      background: rgba(7,21,39,.92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .quiz-card h3 {
+      margin: 0 0 8px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .quiz-options {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .quiz-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      background: rgba(13,27,47,.78);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 13px;
+      padding: 9px 10px;
+      color: #d7e8fa;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: border .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    .quiz-option:hover {
+      border-color: rgba(103,215,255,.45);
+      background: rgba(13,27,47,.98);
+      transform: translateY(-1px);
+    }
+
+    .quiz-option input {
+      width: auto;
+      margin-top: 3px;
+      accent-color: var(--accent);
+    }
+
+    .quiz-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .quiz-actions button {
+      width: auto;
+      padding: 9px 12px;
+    }
+
+    .quiz-feedback {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+      min-height: 42px;
+    }
+
+    .quiz-feedback.correct {
+      border-color: rgba(140,255,173,.36);
+      background: rgba(140,255,173,.08);
+      color: #dfffea;
+    }
+
+    .quiz-feedback.wrong {
+      border-color: rgba(255,107,107,.38);
+      background: rgba(255,107,107,.08);
+      color: #ffe2e2;
+    }
+
+    .quiz-score {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(7,21,39,.96);
+      border: 1px solid rgba(103,215,255,.18);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .quiz-score .num {
+      font-size: 28px;
+    }
+
+    .cheat-sheet {
+      margin-top: 16px;
+      background: rgba(7,21,39,.76);
+      border: 1px dashed rgba(103,215,255,.24);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .cheat-sheet h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .cheat-sheet ul {
+      margin: 6px 0 0 18px;
+      padding: 0;
+    }
+
+    .cheat-sheet li {
+      margin: 4px 0;
+    }
+
+    .cheat-sheet b {
+      color: #eaf6ff;
+    }
+
+
+    .legend {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      background: rgba(7,21,39,.9);
+      border-radius: 999px;
+      padding: 6px 9px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      background: var(--accent);
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      background: rgba(7,21,39,.95);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      min-height: 76px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::after {
+      content: "";
+      position: absolute;
+      right: -20px; top: -20px;
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: rgba(103,215,255,.06);
+    }
+
+    .num {
+      font-size: 25px;
+      font-weight: 950;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+      position: relative;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      position: relative;
+    }
+
+    .explain {
+      margin-top: 12px;
+      min-height: 84px;
+      background: rgba(7,21,39,.96);
+      border: 1px solid rgba(103,215,255,.18);
+      border-left: 4px solid var(--accent);
+      border-radius: 16px;
+      padding: 13px;
+      line-height: 1.45;
+      color: #e3f1ff;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      color: #cfe7ff;
+      font-family: Consolas, ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .code-box, .trace-box {
+      background: rgba(7,21,39,.96);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .trace-box {
+      max-height: 285px;
+      overflow: auto;
+      color: var(--muted);
+    }
+
+    .code-line {
+      display: block;
+      padding: 3px 8px;
+      border-radius: 8px;
+      transition: background .16s ease, color .16s ease, transform .16s ease;
+    }
+
+    .code-line.active {
+      background: rgba(103,215,255,.18);
+      color: white;
+      transform: translateX(2px);
+    }
+
+    details {
+      background: rgba(7,21,39,.92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px;
+      margin-top: 10px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 900;
+      color: var(--accent);
+      outline: none;
+    }
+
+    details p, details li {
+      color: #d7e8fa;
+      line-height: 1.55;
+    }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .key-box {
+      background: rgba(7,21,39,.92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px;
+      min-height: 120px;
+    }
+
+    .key-box h3 {
+      margin: 0 0 7px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .key-box p {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .compare-card {
+      background: rgba(7,21,39,.92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .compare-card h3 {
+      margin-top: 0;
+      color: white;
+    }
+
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      padding: 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .result-line b { color: #fff; }
+
+    #growthSvg, #reductionSvg { height: 260px; margin-top: 12px; }
+
+    .proof-flow {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .proof-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(7,21,39,.92);
+      border: 1px solid var(--line);
+      min-height: 130px;
+    }
+
+    .arrow {
+      font-size: 38px;
+      text-align: center;
+      color: var(--accent);
+      filter: drop-shadow(0 0 12px rgba(103,215,255,.35));
+    }
+
+    .formula {
+      font-family: Consolas, ui-monospace, monospace;
+      color: var(--green);
+      background: rgba(140,255,173,.08);
+      border: 1px solid rgba(140,255,173,.16);
+      border-radius: 12px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
+    .ok { color: var(--green); }
+    .warnText { color: var(--yellow); }
+    .badText { color: var(--red); }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 90;
+      background: rgba(7,21,39,.96);
+      color: white;
+      border: 1px solid rgba(103,215,255,.25);
+      border-radius: 16px;
+      padding: 12px 14px;
+      max-width: 360px;
+      box-shadow: var(--shadow);
+      transform: translateY(140%);
+      transition: transform .22s ease;
+      line-height: 1.4;
+    }
+
+    .toast.show { transform: translateY(0); }
+
+    footer {
+      color: var(--muted-2);
+      text-align: center;
+      padding: 28px 16px 36px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1150px) {
+      main { grid-template-columns: 1fr; }
+      .controls { position: static; height: auto; }
+      .work-grid, .compare-grid, .proof-flow { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .key-grid { grid-template-columns: 1fr; }
+      .header-inner { align-items: flex-start; flex-direction: column; }
+      .top-badges { justify-content: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Longest Path Problem Visualizer</h1>
+      <div class="subtitle">NP-Completeness Proof + Brute Force Exact Solver + DFS Backtracking with Pruning + DAG DP Boundary</div>
+    </div>
+    <div class="top-badges">
+      <span class="badge">Single HTML File</span>
+      <span class="badge">Vanilla JS + SVG</span>
+      <span class="badge">BCS 309 Algorithms I</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <aside class="card controls">
+    <div class="card-pad">
+      <h2>Controls</h2>
+      <p class="help">Choose a preset or type your own undirected graph. Each line is one edge: <b>A B</b>.</p>
+
+      <label for="preset">Preset examples</label>
+      <select id="preset">
+        <option value="simple">Preset 1 — Simple YES instance</option>
+        <option value="ham">Preset 2 — Hamiltonian-style path</option>
+        <option value="dag">Preset 3 — DAG boundary example</option>
+        <option value="no">Preset 4 — NO + pruning demo</option>
+      </select>
+      <button onclick="loadPreset()">Load Preset</button>
+
+      <label for="edgeInput">Custom graph input</label>
+      <textarea id="edgeInput" spellcheck="false"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="startInput">Start vertex s</label>
+          <input id="startInput" value="A" />
+        </div>
+        <div>
+          <label for="targetInput">Target vertex t</label>
+          <input id="targetInput" value="F" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="kInput">Required length k</label>
+          <input id="kInput" type="number" min="0" value="4" />
+        </div>
+        <div>
+          <label for="speed">Speed &nbsp;<span style="font-size:11px;color:var(--muted)">Slow ←&nbsp;&nbsp;&nbsp;&nbsp;→ Fast</span></label>
+          <input id="speed" type="range" min="80" max="1300" value="520" style="direction:rtl" />
+        </div>
+      </div>
+
+      <label for="algo">Algorithm to animate</label>
+      <select id="algo">
+        <option value="pruned">Practical: DFS Backtracking + Pruning</option>
+        <option value="brute">Exact: Brute Force Enumerate Paths</option>
+        <option value="dag">Polynomial Boundary: DAG DP Demo</option>
+      </select>
+
+      <div class="row">
+        <button onclick="buildSteps()">Build Steps</button>
+        <button onclick="stepOnce()">Step</button>
+      </div>
+      <div class="row">
+        <button class="secondary" onclick="stepBack()">Step Back</button>
+        <button class="warn" onclick="play()">Play</button>
+      </div>
+      <div class="row">
+        <button class="secondary" onclick="pause()">Pause</button>
+        <button class="secondary" onclick="replayBestPath()">Replay Best Path</button>
+      </div>
+      <button class="bad" onclick="resetAll(true)">Reset</button>
+
+      <div class="progress-wrap" title="Animation progress">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="complexity-card">
+        <div class="complexity-title">
+          <span>Complexity Gauge</span>
+          <span id="complexityLabel">Low</span>
+        </div>
+        <div class="gauge"><div class="gauge-fill" id="complexityFill"></div></div>
+        <div class="shortcut-note">
+          Estimate based on vertices, edges, and density. Shortcuts: <b>Space</b> play/pause, <b>→</b> step, <b>←</b> back, <b>R</b> reset.
+        </div>
+      </div>
+
+      <div class="small-strip">
+        <span class="mini">Step: <b id="miniStep">0</b></span>
+        <span class="mini">Total steps: <b id="miniTotal">0</b></span>
+      </div>
+
+      <div class="status" id="status">Ready. Load a graph, then click Build Steps.</div>
+
+      <details open>
+        <summary>How to read the graph</summary>
+        <p class="help">Path length means number of edges. A simple path cannot repeat vertices. Longest Path asks if there is a simple path from <b>s</b> to <b>t</b> with length at least <b>k</b>.</p>
+      </details>
+    </div>
+  </aside>
+
+  <section class="card">
+    <div class="tabs">
+      <button class="tab active" data-tab="visual" onclick="showTab('visual', this)">Visualizer</button>
+      <button class="tab" data-tab="proof" onclick="showTab('proof', this)">NP-Completeness</button>
+      <button class="tab" data-tab="compare" onclick="showTab('compare', this)">Comparison Mode</button>
+      <button class="tab" data-tab="education" onclick="showTab('education', this)">Educational Content</button>
+      <button class="tab" data-tab="quiz" onclick="showTab('quiz', this)">Understanding Check</button>
+      <button class="tab" data-tab="submit" onclick="showTab('submit', this)">Possible Q&A</button>
+    </div>
+
+    <div id="visual" class="panel active">
+      <div class="work-grid">
+        <div>
+          <svg id="graphSvg" viewBox="0 0 940 540" aria-label="Graph visualization"></svg>
+
+          <div class="legend">
+            <span class="pill"><span class="dot" style="background:var(--accent)"></span>Normal vertex</span>
+            <span class="pill"><span class="dot" style="background:var(--yellow)"></span>Start / Target</span>
+            <span class="pill"><span class="dot" style="background:var(--green)"></span>Current path</span>
+            <span class="pill"><span class="dot" style="background:var(--red)"></span>Pruned branch</span>
+            <span class="pill"><span class="dot" style="background:var(--purple)"></span>Best path</span>
+          </div>
+          <p class="help" style="margin-top:8px;">Dim gray edges are still real graph edges; bright edges show the current or best path.</p>
+
+          <div class="stats">
+            <div class="stat"><div class="num" id="stepCount">0</div><div class="stat-label">Current step</div></div>
+            <div class="stat"><div class="num" id="visitedCount">0</div><div class="stat-label">States visited</div></div>
+            <div class="stat"><div class="num" id="edgeChecks">0</div><div class="stat-label">Edge checks</div></div>
+            <div class="stat"><div class="num" id="pruneCount">0</div><div class="stat-label">Pruned</div></div>
+            <div class="stat"><div class="num" id="bestLen">0</div><div class="stat-label">Best length</div></div>
+          </div>
+
+          <div class="explain" id="explain">
+            Click <b>Build Steps</b> to generate the algorithm animation. Each step will explain exactly what the algorithm is doing.
+          </div>
+        </div>
+
+        <div>
+          <h2>Pseudocode</h2>
+          <div class="code-box"><pre id="pseudo"></pre></div>
+
+          <h2 style="margin-top:16px;">Search Trace</h2>
+          <div class="trace-box"><pre id="trace">No trace yet.</pre></div>
+
+          <h2 style="margin-top:16px;">Search Tree Visualization</h2>
+          <p class="help">Each node is a DFS state/path. Green means current/solution path, red means pruned branch, purple means best path found.</p>
+          <svg id="searchTreeSvg" viewBox="0 0 620 300" aria-label="Search tree visualization"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div id="proof" class="panel">
+      <h2>NP-Completeness Section</h2>
+      
+
+      <div class="proof-flow">
+        <div class="proof-card">
+          <h3>Hamiltonian Path Instance</h3>
+          <p>Input: graph <b>G = (V,E)</b>, start <b>s</b>, target <b>t</b>.</p>
+          <p>Question: is there a simple path from s to t that visits every vertex exactly once?</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="proof-card">
+          <h3>Longest Path Instance</h3>
+          <p>Use the same graph, same start, same target.</p>
+          <div class="formula">G' = G, &nbsp; s' = s, &nbsp; t' = t, &nbsp; k = |V| - 1</div>
+        </div>
+      </div>
+
+      <svg id="reductionSvg" viewBox="0 0 900 260" aria-label="Reduction diagram"></svg>
+
+      <details open>
+        <summary>1. Longest Path is in NP</summary>
+        <p>A certificate is a proposed simple path from <b>s</b> to <b>t</b>, for example: <span class="formula">A → B → C → F</span></p>
+        <ul>
+          <li>Check the path starts at s and ends at t.</li>
+          <li>Check every consecutive pair is a real edge in G.</li>
+          <li>Check no vertex is repeated, so the path is simple.</li>
+          <li>Check the length is at least k.</li>
+        </ul>
+        <p>All these checks are polynomial time, so Longest Path is in NP.</p>
+      </details>
+
+      <details open>
+        <summary>2. Polynomial-time reduction from Hamiltonian Path</summary>
+        <p>Given <b>(G, s, t)</b> for Hamiltonian Path, create <b>(G, s, t, k = |V| - 1)</b> for Longest Path. This is polynomial because we only copy the graph and calculate the number of vertices.</p>
+      </details>
+
+      <details open>
+        <summary>3. Correctness proof: both directions</summary>
+        <p><b class="ok">Forward:</b> If G has a Hamiltonian path from s to t, it visits all |V| vertices exactly once. Therefore it has |V| - 1 edges, so the Longest Path instance is YES.</p>
+        <p><b class="ok">Backward:</b> If the Longest Path instance has a simple path from s to t with length at least |V| - 1, then it cannot be longer than |V| - 1 because a simple path cannot repeat vertices. So it has exactly |V| - 1 edges and visits every vertex. That is a Hamiltonian path.</p>
+      </details>
+
+      <details>
+        <summary>Why shortest path is polynomial but longest simple path is hard</summary>
+        <p>Shortest path can be solved by BFS or Dijkstra because taking a shorter partial path is always safe. Longest simple path is different: choosing one vertex now may block many future vertices because repeated vertices are not allowed. This causes exponentially many possible simple paths in general graphs.</p>
+      </details>
+    </div>
+
+    <div id="compare" class="panel">
+      <h2>Comparison Mode</h2>
+      <p class="help">This runs both approaches on the same input and shows why pruning is useful while the exact problem remains exponential in the worst case.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>Brute Force Exact Solver</h3>
+          <p class="help">Enumerates every simple path from s to t and returns the longest one. Correct, but exponential.</p>
+          <div id="bruteResult"></div>
+        </div>
+        <div class="compare-card">
+          <h3>DFS Backtracking + Pruning</h3>
+          <p class="help">Uses the same DFS idea but stops branches that cannot possibly reach k.</p>
+          <div id="prunedResult"></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:18px;">Growth Curve Chart</h3>
+      <p class="help">Educational growth estimate, showing why brute force grows faster than practical pruned search. It is not a benchmark timer.</p>
+      <svg id="growthSvg" viewBox="0 0 900 260" aria-label="Growth curve chart"></svg>
+    </div>
+
+    <div id="education" class="panel">
+      <h2>Educational Content</h2>
+      <div class="key-grid">
+        <div class="key-box">
+          <h3>Problem</h3>
+          <p>Given graph G, vertices s and t, and integer k, decide if there is a simple path from s to t with at least k edges.</p>
+        </div>
+        <div class="key-box">
+          <h3>Exact Approach</h3>
+          <p>Brute force explores all simple paths. This guarantees the optimal answer but may take exponential time.</p>
+        </div>
+        <div class="key-box">
+          <h3>Practical Approach</h3>
+          <p>DFS backtracking tracks the current path and visited set, then prunes impossible branches.</p>
+        </div>
+      </div>
+
+      <details open>
+        <summary>Collapsible overview</summary>
+        <p>The Longest Path problem is easy to state but difficult to solve exactly in general graphs. It is NP-complete, meaning no polynomial-time exact algorithm is known unless P = NP. The tool demonstrates both the hardness and a practical search strategy.</p>
+      </details>
+
+      <details open>
+        <summary>Worked example</summary>
+        <p>Let the graph contain the path <b>A → B → C → D → F</b>, with s = A, t = F, and k = 4. This path has 4 edges and repeats no vertices, so the answer is <b class="ok">YES</b>.</p>
+      </details>
+
+      <details open>
+        <summary>Algorithm state, branching, and pruning</summary>
+        <p><b>State:</b> current vertex, current path, visited vertices, and best path found so far.</p>
+        <p><b>Branching:</b> from the current vertex, try each unvisited neighbor.</p>
+        <p><b>Pruning:</b> if <span class="formula">current length + reachable unvisited vertices &lt; k</span>, then even the best possible extension cannot reach k, so the branch is stopped.</p>
+      </details>
+
+      <details open>
+        <summary>Exact vs approximation discussion</summary>
+        <p>The brute-force solver and DFS backtracking solver are both <b>exact</b> when allowed to finish: they can find the real longest simple path. The pruning step does not create an approximation ratio because it does not accept a lower-quality answer early. It only removes branches that are mathematically impossible to reach k.</p>
+        <p>So the correct statement is: DFS with pruning may reduce the number of explored states in practice, but its worst-case running time is still exponential. There is no fixed approximation ratio for this exact backtracking method.</p>
+      </details>
+
+      <details open>
+        <summary>Counterexample: why a greedy choice can fail</summary>
+        <p>A tempting greedy idea is: “always move to the neighbor that looks best right now.” This can fail.</p>
+        <p>Example graph edges: <span class="formula">A-B, A-C, B-F, C-D, D-E, E-F</span>, with s = A and t = F.</p>
+        <p>If greedy chooses <b>B</b> first, it gets path <b>A → B → F</b> with length 2. But the better path is <b>A → C → D → E → F</b> with length 4. This is why backtracking is needed: it explores alternatives instead of trusting one local choice.</p>
+      </details>
+
+      <details>
+        <summary>DAG polynomial-time boundary</summary>
+        <p>In directed acyclic graphs, the longest path can be found in polynomial time using topological sorting and dynamic programming. This shows the boundary: general graph Longest Path is NP-complete, but restricted graph classes can be easier.</p>
+      </details>
+
+         </div>
+
+
+    <div id="quiz" class="panel">
+      <h2>Understanding Check</h2>
+      <p class="help">Test your understanding before the Q&A. Some questions may have more than one correct answer. Select all correct answers, then press Check Answer.</p>
+
+      <div class="quiz-score">
+        <div>
+          <h3 style="margin:0 0 4px;">Quiz Score</h3>
+          <p class="help" style="margin:0;">Instant feedback appears under each question.</p>
+        </div>
+        <div class="num"><span id="quizScore">0</span>/<span id="quizTotal">0</span></div>
+      </div>
+
+      <div class="quiz-wrap" id="quizContainer"></div>
+
+      <div class="quiz-actions">
+        <button onclick="checkAllQuiz()">Check All</button>
+        <button class="secondary" onclick="resetQuiz()">Reset Quiz</button>
+      </div>
+
+      <div class="cheat-sheet">
+        <h3>Answer Key / Cheat Sheet</h3>
+        <ul>
+          <li><b>Q1:</b> Correct answers are <b>A, B, and D</b>. Longest Path input is G, s, t, k; the path must be simple; and the length must be at least k.</li>
+          <li><b>Q2:</b> Correct answer is <b>B</b>. The certificate is a proposed simple path from s to t.</li>
+          <li><b>Q3:</b> Correct answer is <b>C</b>. In the reduction, k = |V| - 1.</li>
+          <li><b>Q4:</b> Correct answers are <b>A, B, and C</b>. NP-completeness needs NP membership, polynomial reduction, and proof of both directions.</li>
+          <li><b>Q5:</b> Correct answer is <b>A</b>. The practical algorithm is DFS backtracking with visited set and pruning.</li>
+          <li><b>Q6:</b> Correct answers are <b>A, B, and D</b>. DFS with pruning is still exponential, can reduce work in practice, and is exact if allowed to finish.</li>
+          <li><b>Q7:</b> Correct answer is <b>A</b>. DAG longest path is polynomial because DAGs can be processed in topological order.</li>
+          <li><b>Q8:</b> Correct answers are <b>A, B, and D</b>. Greedy can fail because a local choice can block a longer future path, so backtracking explores alternatives.</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div id="submit" class="panel">
+      <h2>Possible Q&A Questions</h2>
+      <p class="help">Use this section to prepare for the instructor’s Q&A. These are the questions you should be ready to answer confidently.</p>
+
+      <details open>
+        <summary>1. What is the Longest Path problem?</summary>
+        <p>Given an undirected graph G = (V, E), two vertices s and t, and an integer k, the problem asks whether there exists a simple path from s to t with length at least k. Simple means no repeated vertices.</p>
+      </details>
+
+      <details open>
+        <summary>2. What is the certificate for showing Longest Path is in NP?</summary>
+        <p>The certificate is a proposed path from s to t. The verifier checks that the path starts at s, ends at t, uses valid edges, has no repeated vertices, and has length at least k. These checks take polynomial time.</p>
+      </details>
+
+      <details open>
+        <summary>3. What problem do we reduce from?</summary>
+        <p>We reduce from Hamiltonian Path. Given a Hamiltonian Path instance (G, s, t), we create a Longest Path instance using the same G, same s and t, and set k = |V| - 1.</p>
+      </details>
+
+      <details open>
+        <summary>4. Why do we set k = |V| - 1?</summary>
+        <p>A path that visits all |V| vertices exactly once has exactly |V| - 1 edges. Therefore, a Hamiltonian path from s to t exists if and only if there is a simple path from s to t of length at least |V| - 1.</p>
+      </details>
+
+      <details>
+        <summary>5. Prove the forward direction.</summary>
+        <p>If the Hamiltonian Path instance is YES, then there is a simple path from s to t that visits every vertex exactly once. This path has |V| - 1 edges, so the constructed Longest Path instance with k = |V| - 1 is also YES.</p>
+      </details>
+
+      <details>
+        <summary>6. Prove the backward direction.</summary>
+        <p>If the constructed Longest Path instance is YES, then there is a simple path from s to t of length at least |V| - 1. A simple path in a graph with |V| vertices cannot have more than |V| - 1 edges, so it must visit all vertices exactly once. Therefore, it is a Hamiltonian path.</p>
+      </details>
+
+      <details>
+        <summary>7. Why is the reduction polynomial time?</summary>
+        <p>The construction only copies the graph and computes k = |V| - 1. Copying the graph takes polynomial time in the number of vertices and edges.</p>
+      </details>
+
+      <details>
+        <summary>8. What algorithmic paradigm is used in the practical solver?</summary>
+        <p>The practical solver uses DFS backtracking. Its state is the current vertex, current path, visited set, and best path. It branches by trying each unvisited neighbor and backtracks after exploring a branch.</p>
+      </details>
+
+      <details>
+        <summary>9. How does pruning work?</summary>
+        <p>The algorithm checks whether the current path can still possibly reach length k. If even the best possible extension cannot reach k, it stops exploring that branch.</p>
+      </details>
+
+      <details>
+        <summary>10. Is DFS with pruning polynomial time?</summary>
+        <p>No. It is still exponential in the worst case. Pruning improves practical performance on many inputs, but it does not remove the NP-complete nature of the general Longest Path problem.</p>
+      </details>
+
+      <details>
+        <summary>11. Why is shortest path easier than longest simple path?</summary>
+        <p>Shortest path can be solved efficiently using BFS or Dijkstra because shorter partial paths remain useful. Longest simple path is harder because choosing a vertex can block future choices, and vertices cannot be repeated.</p>
+      </details>
+
+      <details>
+        <summary>12. Why can DAG longest path be solved in polynomial time?</summary>
+        <p>A DAG has no directed cycles, so we can process vertices in topological order and use dynamic programming to compute the longest path efficiently.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<footer>
+  © 2026 Zuhair Halawa | Longest Path NP-Complete Visualizer | BCS 309 Algorithms I
+</footer>
+
+<script>
+const presets = {
+  simple: {
+    edges: `A B
+B C
+C D
+D F
+A E
+E F
+B E
+C F`,
+    s: "A", t: "F", k: 4
+  },
+  ham: {
+    edges: `A B
+B C
+C D
+D E
+E F
+A C
+B D
+C E
+D F
+B E`,
+    s: "A", t: "F", k: 5
+  },
+  dag: {
+    edges: `A B
+A C
+B D
+C D
+B E
+D E
+E F`,
+    s: "A", t: "F", k: 4
+  },
+  no: {
+    edges: `A B
+B F
+A C
+C D
+D E`,
+    s: "A", t: "F", k: 4
+  }
+};
+
+const pseudoTexts = {
+  pruned: [
+    "DFS_BACKTRACK(current, target, path, visited):",
+    "  record current state",
+    "  if current == target:",
+    "     update best path",
+    "     return",
+    "  reachable = count reachable unvisited vertices",
+    "  possible = current length + reachable",
+    "  if possible < k:",
+    "     prune this branch",
+    "     return",
+    "  for each neighbor of current:",
+    "     if neighbor is not visited:",
+    "        add neighbor to path and visited",
+    "        DFS_BACKTRACK(neighbor, target, path, visited)",
+    "        remove neighbor and backtrack"
+  ],
+  brute: [
+    "BRUTE_FORCE_LONGEST(s, t):",
+    "  best = empty path",
+    "  enumerate every simple path starting from s",
+    "  if current vertex is t:",
+    "     compare current path with best",
+    "  for each unvisited neighbor:",
+    "     recursively continue the path",
+    "  return the longest path found"
+  ],
+  dag: [
+    "DAG_LONGEST_PATH(s, t):",
+    "  compute a topological order",
+    "  set dist[s] = 0 and all others = -infinity",
+    "  for each vertex u in topological order:",
+    "     for each directed edge u -> v:",
+    "        if dist[u] + 1 > dist[v]:",
+    "           update dist[v] and parent[v]",
+    "  return dist[t]"
+  ]
+};
+
+let graph = { V: [], E: [], adj: {}, directedAdj: {} };
+let positions = {};
+let steps = [];
+let idx = -1;
+let timer = null;
+let bestPathGlobal = [];
+let live = { visited: 0, pruned: 0, edges: 0, best: 0 };
+let searchTree = { nodes: [], edges: [], byKey: new Map() };
+let replayTimer = null;
+let lastBestPath = [];
+
+function $(id) { return document.getElementById(id); }
+
+function toast(msg) {
+  const el = $("toast");
+  el.innerHTML = msg;
+  el.classList.add("show");
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#039;" }[ch]));
+}
+
+function loadPreset() {
+  const p = presets[$("preset").value];
+  $("edgeInput").value = p.edges;
+  $("startInput").value = p.s;
+  $("targetInput").value = p.t;
+  $("kInput").value = p.k;
+  resetAll(false);
+  parseGraph();
+  drawGraph();
+  updateComplexityGauge();
+  updateStatus(`Loaded preset with ${graph.V.length} vertices and ${graph.E.length} edges.`);
+}
+
+function parseGraph() {
+  const lines = $("edgeInput").value.trim().split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const Vset = new Set();
+  const E = [];
+  const seen = new Set();
+
+  for (const line of lines) {
+    const parts = line.split(/\s+/);
+    if (parts.length < 2) continue;
+    const a = parts[0], b = parts[1];
+    if (a === b) continue;
+    const key = [a,b].sort().join("|");
+    if (!seen.has(key)) {
+      seen.add(key);
+      E.push([a,b]);
+      Vset.add(a); Vset.add(b);
+    }
+  }
+
+  const V = Array.from(Vset).sort((a,b) => a.localeCompare(b, undefined, { numeric: true }));
+  const adj = {};
+  const directedAdj = {};
+  V.forEach(v => { adj[v] = []; directedAdj[v] = []; });
+
+  E.forEach(([a,b]) => {
+    adj[a].push(b);
+    adj[b].push(a);
+    directedAdj[a].push(b);
+  });
+
+  Object.keys(adj).forEach(v => adj[v].sort((a,b) => a.localeCompare(b, undefined, { numeric: true })));
+  Object.keys(directedAdj).forEach(v => directedAdj[v].sort((a,b) => a.localeCompare(b, undefined, { numeric: true })));
+
+  graph = { V, E, adj, directedAdj };
+  computePositions();
+}
+
+function computePositions() {
+  positions = {};
+  const n = Math.max(1, graph.V.length);
+  const cx = 470, cy = 270;
+  const r = Math.min(215, 85 + n * 16);
+
+  graph.V.forEach((v, i) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+    positions[v] = {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle)
+    };
+  });
+}
+
+function makeSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function drawGraph(path = [], current = null, pruned = false, best = []) {
+  const svg = $("graphSvg");
+  svg.innerHTML = "";
+
+  const s = $("startInput").value.trim();
+  const t = $("targetInput").value.trim();
+
+  const defs = makeSvgEl("defs");
+  const glow = makeSvgEl("filter", { id: "glow", x: "-60%", y: "-60%", width: "220%", height: "220%" });
+  glow.appendChild(makeSvgEl("feGaussianBlur", { stdDeviation: "3.6", result: "coloredBlur" }));
+  const merge = makeSvgEl("feMerge");
+  merge.appendChild(makeSvgEl("feMergeNode", { in: "coloredBlur" }));
+  merge.appendChild(makeSvgEl("feMergeNode", { in: "SourceGraphic" }));
+  glow.appendChild(merge);
+  defs.appendChild(glow);
+
+  const marker = makeSvgEl("marker", {
+    id: "arrowhead",
+    markerWidth: 10,
+    markerHeight: 8,
+    refX: 9,
+    refY: 4,
+    orient: "auto",
+    markerUnits: "strokeWidth"
+  });
+  marker.appendChild(makeSvgEl("path", { d: "M0,0 L10,4 L0,8 Z", fill: "var(--edge)" }));
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+
+  const isDagMode = $("algo").value === "dag";
+
+  function edgePoints(a, b, shortenStart = 31, shortenEnd = 31) {
+    const pa = positions[a], pb = positions[b];
+    if (!pa || !pb) return null;
+    const dx = pb.x - pa.x;
+    const dy = pb.y - pa.y;
+    const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+    return {
+      x1: pa.x + (dx / dist) * shortenStart,
+      y1: pa.y + (dy / dist) * shortenStart,
+      x2: pb.x - (dx / dist) * shortenEnd,
+      y2: pb.y - (dy / dist) * shortenEnd
+    };
+  }
+
+  const pathEdges = new Set();
+  for (let i = 0; i < path.length - 1; i++) {
+    pathEdges.add(path[i] + "|" + path[i + 1]);
+    pathEdges.add(path[i + 1] + "|" + path[i]);
+  }
+
+  const bestEdges = new Set();
+  for (let i = 0; i < best.length - 1; i++) {
+    bestEdges.add(best[i] + "|" + best[i + 1]);
+    bestEdges.add(best[i + 1] + "|" + best[i]);
+  }
+
+  // Layer 1: draw every real graph edge clearly.
+  for (const [a, b] of graph.E) {
+    const pts = edgePoints(a, b, 31, 31);
+    if (!pts) continue;
+    const base = makeSvgEl("line", {
+      x1: pts.x1, y1: pts.y1, x2: pts.x2, y2: pts.y2,
+      stroke: "var(--edge)",
+      "stroke-width": 3.5,
+      "stroke-linecap": "round",
+      opacity: ".90",
+      "marker-end": isDagMode ? "url(#arrowhead)" : ""
+    });
+    base.style.transition = "all .25s ease";
+    svg.appendChild(base);
+  }
+
+  // Layer 2: overlay best path edges.
+  for (const [a, b] of graph.E) {
+    if (!bestEdges.has(a + "|" + b)) continue;
+    const pts = edgePoints(a, b, 31, 31);
+    if (!pts) continue;
+    const line = makeSvgEl("line", {
+      x1: pts.x1, y1: pts.y1, x2: pts.x2, y2: pts.y2,
+      stroke: "var(--purple)",
+      "stroke-width": 5,
+      "stroke-linecap": "round",
+      opacity: "1",
+      filter: "url(#glow)",
+      "marker-end": isDagMode ? "url(#arrowhead)" : ""
+    });
+    svg.appendChild(line);
+  }
+
+  // Layer 3: overlay current/pruned path edges.
+  for (const [a, b] of graph.E) {
+    if (!pathEdges.has(a + "|" + b)) continue;
+    const pts = edgePoints(a, b, 31, 31);
+    if (!pts) continue;
+    const line = makeSvgEl("line", {
+      x1: pts.x1, y1: pts.y1, x2: pts.x2, y2: pts.y2,
+      stroke: pruned ? "var(--red)" : "var(--green)",
+      "stroke-width": 7,
+      "stroke-linecap": "round",
+      opacity: "1",
+      filter: "url(#glow)",
+      "marker-end": isDagMode ? "url(#arrowhead)" : ""
+    });
+    svg.appendChild(line);
+  }
+
+  // Layer 4: draw vertices on top of all edge layers.
+  for (const v of graph.V) {
+    const p = positions[v];
+    const inPath = path.includes(v);
+    const inBest = best.includes(v);
+    const isSpecial = v === s || v === t;
+    const g = makeSvgEl("g");
+    let fill = "var(--node)", stroke = "var(--accent)", r = 25;
+
+    if (inBest) { fill = "#271d43"; stroke = "var(--purple)"; }
+    if (isSpecial) { fill = "#3a2b08"; stroke = "var(--yellow)"; }
+    if (inPath) { fill = pruned ? "#491f2a" : "#113927"; stroke = pruned ? "var(--red)" : "var(--green)"; r = 28; }
+    if (v === current) { fill = "#17395e"; stroke = "var(--accent)"; r = 31; }
+
+    const circle = makeSvgEl("circle", {
+      cx: p.x, cy: p.y, r,
+      fill, stroke,
+      "stroke-width": 4,
+      filter: inPath || v === current ? "url(#glow)" : ""
+    });
+    circle.style.transition = "all .25s ease";
+
+    const text = makeSvgEl("text", {
+      x: p.x, y: p.y + 6,
+      "text-anchor": "middle",
+      fill: "#ffffff",
+      "font-size": 17,
+      "font-weight": 900
+    });
+    text.textContent = v;
+
+    if (v === s || v === t) {
+      const label = makeSvgEl("text", {
+        x: p.x, y: p.y - 37,
+        "text-anchor": "middle",
+        fill: "var(--yellow)",
+        "font-size": 12,
+        "font-weight": 900
+      });
+      label.textContent = v === s ? "START" : "TARGET";
+      g.appendChild(label);
+    }
+
+    g.style.cursor = "pointer";
+    g.addEventListener("click", (event) => handleNodeClick(v, event));
+    const clickHint = makeSvgEl("title");
+    clickHint.textContent = "Click to set start/target";
+    g.appendChild(clickHint);
+    g.appendChild(circle);
+    g.appendChild(text);
+    svg.appendChild(g);
+  }
+
+  const title = makeSvgEl("text", { x: 22, y: 32, fill: "#d9edff", "font-size": 15, "font-weight": 800 });
+  title.textContent = `Graph: |V|=${graph.V.length}, |E|=${graph.E.length}, s=${s}, t=${t}, k=${$("kInput").value}`;
+  svg.appendChild(title);
+}
+function updateReductionDiagram() {
+  const svg = $("reductionSvg");
+  svg.innerHTML = "";
+  const box = (x,y,w,h,title,body,color) => {
+    const r = makeSvgEl("rect", { x,y,width:w,height:h,rx:18,fill:"#071527",stroke:color,"stroke-width":2 });
+    svg.appendChild(r);
+    const t = makeSvgEl("text", { x:x+18, y:y+31, fill:"#fff", "font-size":16, "font-weight":900 });
+    t.textContent = title; svg.appendChild(t);
+    const lines = body.split("\n");
+    lines.forEach((line,i) => {
+      const b = makeSvgEl("text", { x:x+18, y:y+62+i*23, fill:"#a7b8cf", "font-size":14 });
+      b.textContent = line; svg.appendChild(b);
+    });
+  };
+  box(35,55,300,145,"Hamiltonian Path","Input: (G, s, t)\nNeed path visiting all vertices\nKnown NP-complete problem","var(--yellow)");
+  box(565,55,300,145,"Longest Path","Input: (G, s, t, k)\nSet k = |V| - 1\nYES iff Hamiltonian path exists","var(--green)");
+  const line = makeSvgEl("line", { x1:350,y1:128,x2:545,y2:128,stroke:"var(--accent)","stroke-width":5,"stroke-linecap":"round" });
+  svg.appendChild(line);
+  const arrow = makeSvgEl("polygon", { points:"545,128 525,116 525,140", fill:"var(--accent)" });
+  svg.appendChild(arrow);
+  const label = makeSvgEl("text", { x:405, y:105, fill:"var(--accent)", "font-size":15, "font-weight":900 });
+  label.textContent = "polynomial reduction";
+  svg.appendChild(label);
+  const formula = makeSvgEl("text", { x:332, y:224, fill:"var(--green)", "font-size":17, "font-weight":900 });
+  formula.textContent = "Construction: keep G, keep s and t, set k = |V| - 1";
+  svg.appendChild(formula);
+}
+
+function setPseudo(active = 0) {
+  const arr = pseudoTexts[$("algo").value] || pseudoTexts.pruned;
+  $("pseudo").innerHTML = arr.map((line, i) =>
+    `<span class="code-line ${i === active ? "active" : ""}">${escapeHtml(line)}</span>`
+  ).join("");
+}
+
+function resetAll(redraw = true) {
+  pause();
+  if (replayTimer) { clearInterval(replayTimer); replayTimer = null; }
+  idx = -1;
+  steps = [];
+  bestPathGlobal = [];
+  searchTree = { nodes: [], edges: [], byKey: new Map() };
+  live = { visited: 0, pruned: 0, edges: 0, best: 0 };
+  $("stepCount").textContent = "0";
+  $("visitedCount").textContent = "0";
+  $("edgeChecks").textContent = "0";
+  $("pruneCount").textContent = "0";
+  $("bestLen").textContent = "0";
+  $("miniStep").textContent = "0";
+  $("miniTotal").textContent = "0";
+  if ($("progressFill")) $("progressFill").style.width = "0%";
+  $("trace").textContent = "No trace yet.";
+  $("explain").innerHTML = "Click <b>Build Steps</b> to generate the algorithm animation.";
+  setPseudo(0);
+  drawSearchTree(-1);
+  if (redraw) {
+    parseGraph();
+    drawGraph();
+    updateComplexityGauge();
+    computeComparison();
+    drawGrowthChart();
+    updateReductionDiagram();
+  }
+}
+
+function updateStatus(msg) {
+  $("status").innerHTML = msg;
+}
+
+function addStep({ path, current, text, line = 0, pruned = false, best = [], edgeCheck = false, kind = "visit", bestLenValue = null }) {
+  steps.push({ path: [...path], current, text, line, pruned, best: [...best], edgeCheck, kind, bestLenValue });
+}
+
+function validateInput() {
+  parseGraph();
+  const s = $("startInput").value.trim();
+  const t = $("targetInput").value.trim();
+  if (!graph.V.length) {
+    updateStatus(`<span class="badText">Graph is empty. Add edges first.</span>`);
+    return false;
+  }
+  if (!graph.V.includes(s) || !graph.V.includes(t)) {
+    updateStatus(`<span class="badText">Start or target is not in the graph. Check s and t.</span>`);
+    return false;
+  }
+  if (s === t) {
+    updateStatus(`<span class="badText">Start and target must be different vertices for this demo.</span>`);
+    return false;
+  }
+  return true;
+}
+
+function buildSteps() {
+  resetAll(false);
+  if (!validateInput()) return;
+  drawGraph();
+  const algo = $("algo").value;
+  const s = $("startInput").value.trim();
+  const t = $("targetInput").value.trim();
+  const k = Number($("kInput").value);
+
+  if (algo === "brute") buildBruteSteps(s, t);
+  else if (algo === "dag") buildDAGSteps(s, t);
+  else buildPrunedSteps(s, t, k);
+
+  $("miniTotal").textContent = steps.length;
+  $("trace").textContent = steps.slice(0, 80).map((st, i) => `${i + 1}. ${st.text.replace(/<[^>]+>/g, "")}`).join("\n") + (steps.length > 80 ? "\n..." : "");
+  lastBestPath = [];
+  for (let i = steps.length - 1; i >= 0; i--) {
+    if (steps[i].best && steps[i].best.length >= 2) {
+      lastBestPath = [...steps[i].best];
+      break;
+    }
+  }
+  prepareSearchTreeData();
+  drawSearchTree(-1);
+  computeComparison();
+  drawGrowthChart();
+  updateReductionDiagram();
+  const hasDagWarning = algo === "dag" && steps.some(st => String(st.text).includes("not a DAG"));
+  if (hasDagWarning) {
+    updateStatus(`<span class="warnText">DAG DP warning: this input is not a DAG using the listed edge directions. The demo created one warning step only.</span>`);
+    toast("DAG warning: this input is not acyclic.");
+  } else {
+    updateStatus(`<span class="ok">Built ${steps.length} animation steps.</span> Press Step or Play.`);
+    toast("Steps built. Press Play for the smooth animation.");
+  }
+}
+
+function buildBruteSteps(s, t) {
+  let best = [];
+  let calls = 0;
+  function dfs(u, path, visited) {
+    calls++;
+    addStep({ path, current: u, best, line: 2, text: `Brute force explores vertex <b>${u}</b>. Current path is <b>${path.join(" → ")}</b>.` });
+    if (u === t) {
+      addStep({ path, current: u, best, line: 3, text: `Reached target <b>${t}</b>. Compare path length <b>${path.length - 1}</b> with current best <b>${Math.max(0, best.length - 1)}</b>.` });
+      if (path.length > best.length) {
+        best = [...path];
+        bestPathGlobal = [...best];
+        addStep({ path, current: u, best, line: 4, text: `<b class="ok">New best path found:</b> ${best.join(" → ")} with length ${best.length - 1}.` });
+      }
+      return;
+    }
+    for (const v of graph.adj[u] || []) {
+      addStep({ path, current: u, best, line: 5, edgeCheck: true, text: `Check neighbor <b>${v}</b> from <b>${u}</b>. Is it unvisited? ${visited.has(v) ? "No." : "Yes."}` });
+      if (!visited.has(v)) {
+        visited.add(v);
+        path.push(v);
+        dfs(v, path, visited);
+        path.pop();
+        visited.delete(v);
+        addStep({ path, current: u, best, line: 6, text: `Backtrack to <b>${u}</b>. Remove <b>${v}</b> from the current path.` });
+      }
+    }
+  }
+  dfs(s, [s], new Set([s]));
+  addStep({ path: best.length ? best : [s], current: best[best.length - 1] || s, best, line: 7, text: `Finished brute force. Best path length is <b>${Math.max(0, best.length - 1)}</b>: <b>${best.join(" → ") || "none"}</b>.` });
+}
+
+
+function countReachableUnvisited(start, visited) {
+  const seen = new Set();
+  const stack = [start];
+  let count = 0;
+
+  while (stack.length) {
+    const u = stack.pop();
+    for (const v of graph.adj[u] || []) {
+      if (visited.has(v) || seen.has(v)) continue;
+      seen.add(v);
+      count++;
+      stack.push(v);
+    }
+  }
+
+  return count;
+}
+
+function buildPrunedSteps(s, t, k) {
+  let best = [];
+  function dfs(u, path, visited) {
+    addStep({ path, current: u, best, line: 1, text: `DFS state at <b>${u}</b>. Current path: <b>${path.join(" → ")}</b>. Length = <b>${path.length - 1}</b>. Need k = <b>${k}</b>.` });
+
+    if (u === t) {
+      addStep({ path, current: u, best, line: 2, text: `Current vertex is target <b>${t}</b>. Compare this path with the best path.` });
+      if (path.length > best.length) {
+        best = [...path];
+        bestPathGlobal = [...best];
+        addStep({ path, current: u, best, line: 3, text: `<b class="ok">Best path updated:</b> ${best.join(" → ")}. Length = ${best.length - 1}.` });
+      }
+      return;
+    }
+
+    const reachable = countReachableUnvisited(u, visited);
+    const possible = (path.length - 1) + reachable;
+    addStep({ path, current: u, best, line: 6, text: `Pruning check: current length <b>${path.length - 1}</b> + reachable unvisited vertices <b>${reachable}</b> = possible max <b>${possible}</b>.` });
+
+    if (possible < k) {
+      addStep({ path, current: u, best, line: 8, pruned: true, text: `<b class="badText">Pruned branch.</b> Even the maximum possible length <b>${possible}</b> is less than k = <b>${k}</b>.` });
+      return;
+    }
+
+    for (const v of graph.adj[u] || []) {
+      addStep({ path, current: u, best, line: 10, edgeCheck: true, text: `Try neighbor <b>${v}</b> from <b>${u}</b>. ${visited.has(v) ? "Already visited, skip it." : "Unvisited, so continue DFS."}` });
+      if (!visited.has(v)) {
+        visited.add(v);
+        path.push(v);
+        addStep({ path, current: v, best, line: 12, text: `Add <b>${v}</b> to path. New path: <b>${path.join(" → ")}</b>.` });
+        dfs(v, path, visited);
+        path.pop();
+        visited.delete(v);
+        addStep({ path, current: u, best, line: 14, text: `Backtrack: remove <b>${v}</b>, return to <b>${u}</b>, and try another branch.` });
+      }
+    }
+  }
+
+  dfs(s, [s], new Set([s]));
+  const yes = best.length > 0 && best.length - 1 >= k;
+  addStep({
+    path: best.length ? best : [s],
+    current: best[best.length - 1] || s,
+    best,
+    line: yes ? 3 : 8,
+    text: `${yes ? `<b class="ok">YES</b>` : `<b class="badText">NO</b>`}. Best path length found is <b>${Math.max(0, best.length - 1)}</b>. Required k is <b>${k}</b>. Best path: <b>${best.join(" → ") || "none"}</b>.`
+  });
+}
+
+function buildDAGSteps(s, t) {
+  const indeg = {};
+  graph.V.forEach(v => indeg[v] = 0);
+  graph.E.forEach(([a, b]) => indeg[b]++);
+  const q = graph.V.filter(v => indeg[v] === 0);
+  const order = [];
+
+  while (q.length) {
+    const u = q.shift();
+    order.push(u);
+    for (const v of graph.directedAdj[u] || []) {
+      indeg[v]--;
+      if (indeg[v] === 0) q.push(v);
+    }
+  }
+
+  if (order.length !== graph.V.length) {
+    addStep({ path: [s], current: s, line: 1, text: `<b class="warnText">This graph is not a DAG using the input edge directions.</b> DAG DP needs no directed cycles.` });
+    updateStatus(`<span class="warnText">DAG DP warning: this input is not a DAG using the listed edge directions. Use the DAG preset or remove directed cycles.</span>`);
+    return;
+  }
+
+  const dist = {};
+  const parent = {};
+  graph.V.forEach(v => dist[v] = -Infinity);
+  dist[s] = 0;
+  addStep({ path: [s], current: s, line: 1, bestLenValue: dist[t] === -Infinity ? 0 : dist[t], text: `Topological order is <b>${order.join(", ")}</b>. Set dist[${s}] = 0 and all others to -∞.` });
+
+  for (const u of order) {
+    addStep({ path: [u], current: u, line: 3, bestLenValue: dist[t] === -Infinity ? 0 : dist[t], text: `Process vertex <b>${u}</b>. Current dist[${u}] = <b>${dist[u] === -Infinity ? "-∞" : dist[u]}</b>.` });
+    if (dist[u] !== -Infinity) {
+      for (const v of graph.directedAdj[u] || []) {
+        addStep({ path: [u, v], current: v, line: 4, edgeCheck: true, bestLenValue: dist[t] === -Infinity ? 0 : dist[t], text: `Check directed edge <b>${u} → ${v}</b>. Candidate distance = dist[${u}] + 1 = <b>${dist[u] + 1}</b>.` });
+        if (dist[u] + 1 > dist[v]) {
+          dist[v] = dist[u] + 1;
+          parent[v] = u;
+          const updatedPath = reconstructPath(parent, s, v);
+          const targetPath = reconstructPath(parent, s, t);
+          addStep({ path: updatedPath, current: v, best: targetPath, line: 6, bestLenValue: dist[t] === -Infinity ? 0 : dist[t], text: `Update dist[${v}] to <b>${dist[v]}</b> and set parent[${v}] = ${u}.` });
+        }
+      }
+    }
+  }
+  const path = reconstructPath(parent, s, t);
+  addStep({ path: path.length ? path : [s], current: t, best: path.length ? path : [], line: 7, bestLenValue: dist[t] === -Infinity ? 0 : dist[t], text: `DAG DP finished. Longest directed path from <b>${s}</b> to <b>${t}</b> has length <b>${dist[t] === -Infinity ? "unreachable" : dist[t]}</b>.` });
+}
+
+function reconstructPath(parent, s, v) {
+  const path = [];
+  let cur = v;
+  const guard = new Set();
+  while (cur && !guard.has(cur)) {
+    path.unshift(cur);
+    if (cur === s) break;
+    guard.add(cur);
+    cur = parent[cur];
+  }
+  return path[0] === s ? path : [];
+}
+
+
+function pathKey(path) {
+  return path && path.length ? path.join("→") : "start";
+}
+
+function prepareSearchTreeData() {
+  const byKey = new Map();
+  const nodes = [];
+  const edges = [];
+
+  const addNode = (path, stepIndex, status = "normal") => {
+    const key = pathKey(path);
+    if (!byKey.has(key)) {
+      const node = {
+        key,
+        path: [...path],
+        label: path[path.length - 1] || "∅",
+        depth: Math.max(0, path.length - 1),
+        firstStep: stepIndex,
+        status
+      };
+      byKey.set(key, node);
+      nodes.push(node);
+      if (path.length > 1) {
+        const parentKey = pathKey(path.slice(0, -1));
+        edges.push({ from: parentKey, to: key });
+      }
+    } else {
+      const node = byKey.get(key);
+      if (status === "pruned") node.status = "pruned";
+      if (status === "best") node.status = "best";
+    }
+  };
+
+  steps.forEach((st, i) => {
+    if (!st.path || !st.path.length) return;
+    const status = st.pruned ? "pruned" : ((st.best && pathKey(st.path) === pathKey(st.best)) ? "best" : "normal");
+    addNode(st.path, i, status);
+    if (st.best && st.best.length) addNode(st.best, i, "best");
+  });
+
+  searchTree = { nodes, edges, byKey };
+}
+
+function drawSearchTree(activeStep = -1) {
+  const svg = $("searchTreeSvg");
+  if (!svg) return;
+  svg.innerHTML = "";
+
+  const title = makeSvgEl("text", { x: 18, y: 26, fill: "#d9edff", "font-size": 14, "font-weight": 900 });
+  title.textContent = "DFS Search Tree";
+  svg.appendChild(title);
+
+  if (!searchTree.nodes.length) {
+    const empty = makeSvgEl("text", { x: 18, y: 58, fill: "var(--muted)", "font-size": 13 });
+    empty.textContent = "Build steps to show the explored search tree.";
+    svg.appendChild(empty);
+    return;
+  }
+
+  const current = activeStep >= 0 ? steps[activeStep] : null;
+  const currentKey = current ? pathKey(current.path) : "";
+  const bestKey = current && current.best ? pathKey(current.best) : "";
+
+  const visibleNodes = searchTree.nodes
+    .filter(n => activeStep < 0 || n.firstStep <= activeStep)
+    .slice(0, 85);
+
+  const visibleKeys = new Set(visibleNodes.map(n => n.key));
+  const levels = {};
+  visibleNodes.forEach(n => {
+    if (!levels[n.depth]) levels[n.depth] = [];
+    levels[n.depth].push(n);
+  });
+
+  const maxDepth = Math.max(1, ...visibleNodes.map(n => n.depth));
+  const W = 620, H = 300;
+  const left = 42, right = 30, top = 55, bottom = 28;
+  const xForDepth = d => left + d * (W - left - right) / Math.max(1, maxDepth);
+
+  for (const [depthStr, arr] of Object.entries(levels)) {
+    const depth = Number(depthStr);
+    arr.forEach((n, i) => {
+      const gap = (H - top - bottom) / Math.max(1, arr.length);
+      n.tx = xForDepth(depth);
+      n.ty = top + gap * (i + 0.5);
+    });
+  }
+
+  searchTree.edges.forEach(e => {
+    const a = searchTree.byKey.get(e.from);
+    const b = searchTree.byKey.get(e.to);
+    if (!a || !b || !visibleKeys.has(a.key) || !visibleKeys.has(b.key)) return;
+    const line = makeSvgEl("line", {
+      x1: a.tx, y1: a.ty, x2: b.tx, y2: b.ty,
+      stroke: b.status === "pruned" ? "var(--red)" : (b.key === bestKey ? "var(--purple)" : "rgba(255,255,255,.22)"),
+      "stroke-width": b.key === currentKey ? 4 : 2,
+      "stroke-linecap": "round",
+      opacity: .9
+    });
+    svg.appendChild(line);
+  });
+
+  visibleNodes.forEach(n => {
+    const isActive = n.key === currentKey;
+    const isBest = n.key === bestKey || n.status === "best";
+    let fill = "#102038", stroke = "var(--accent)";
+    if (n.status === "pruned") { fill = "#491f2a"; stroke = "var(--red)"; }
+    if (isBest) { fill = "#271d43"; stroke = "var(--purple)"; }
+    if (isActive) { fill = "#113927"; stroke = "var(--green)"; }
+
+    svg.appendChild(makeSvgEl("circle", {
+      cx: n.tx, cy: n.ty, r: isActive ? 13 : 10,
+      fill, stroke, "stroke-width": isActive ? 4 : 2
+    }));
+
+    const label = makeSvgEl("text", {
+      x: n.tx, y: n.ty + 4,
+      "text-anchor": "middle",
+      fill: "#fff",
+      "font-size": 10,
+      "font-weight": 900
+    });
+    label.textContent = n.label;
+    svg.appendChild(label);
+  });
+
+  if (searchTree.nodes.length > 85) {
+    const note = makeSvgEl("text", { x: 18, y: 286, fill: "var(--yellow)", "font-size": 12 });
+    note.textContent = "Large tree: showing first 85 DFS states for clarity.";
+    svg.appendChild(note);
+  }
+}
+
+
+
+function updateProgress() {
+  if (!$("progressFill")) return;
+  const pct = steps.length ? Math.max(0, Math.min(100, ((idx + 1) / steps.length) * 100)) : 0;
+  $("progressFill").style.width = pct + "%";
+}
+
+function updateComplexityGauge() {
+  if (!$("complexityFill") || !$("complexityLabel")) return;
+  const n = graph.V.length;
+  const m = graph.E.length;
+  const maxEdges = n <= 1 ? 1 : (n * (n - 1)) / 2;
+  const density = m / maxEdges;
+  const score = Math.min(100, Math.round((n * 9) + (density * 35) + Math.max(0, n - 6) * 8));
+  $("complexityFill").style.width = score + "%";
+  let label = "Low";
+  if (score >= 70) label = "High";
+  else if (score >= 40) label = "Medium";
+  $("complexityLabel").textContent = `${label} (${score}%)`;
+}
+
+function handleNodeClick(v, event) {
+  const sInput = $("startInput");
+  const tInput = $("targetInput");
+  const currentS = sInput.value.trim();
+  const currentT = tInput.value.trim();
+
+  if (event && event.shiftKey) {
+    if (v === currentS) {
+      toast("Target cannot be the same as start. Choose a different node.");
+      return;
+    }
+    tInput.value = v;
+    toast(`Target set to ${v}.`);
+  } else {
+    if (v === currentT) {
+      toast("Start cannot be the same as target. Shift-click another node for target, or choose a different start.");
+      return;
+    }
+    sInput.value = v;
+    toast(`Start set to ${v}. Shift-click a node to set target.`);
+  }
+
+  resetAll(true);
+}
+
+function renderStep(stepIndex) {
+  if (!steps.length) return;
+  idx = Math.max(0, Math.min(stepIndex, steps.length - 1));
+  live = { visited: 0, pruned: 0, edges: 0, best: 0 };
+
+  for (let i = 0; i <= idx; i++) {
+    const step = steps[i];
+    if (step.kind !== "meta") live.visited++;
+    if (step.pruned) live.pruned++;
+    if (step.edgeCheck) live.edges++;
+    if (step.bestLenValue !== null && step.bestLenValue !== undefined) {
+      live.best = Math.max(live.best, step.bestLenValue);
+    } else {
+      live.best = Math.max(live.best, Math.max(0, (step.best || []).length - 1));
+    }
+  }
+
+  const st = steps[idx];
+  drawGraph(st.path, st.current, st.pruned, st.best || bestPathGlobal);
+  drawSearchTree(idx);
+  setPseudo(st.line);
+
+  $("stepCount").textContent = idx + 1;
+  $("miniStep").textContent = idx + 1;
+  $("visitedCount").textContent = live.visited;
+  $("edgeChecks").textContent = live.edges;
+  $("pruneCount").textContent = live.pruned;
+  $("bestLen").textContent = live.best;
+  $("explain").innerHTML = st.text;
+  updateProgress();
+  updateStatus(idx === steps.length - 1 ? `<span class="ok">Finished.</span>` : `Running. Step ${idx + 1} of ${steps.length}.`);
+}
+
+function stepBack() {
+  if (!steps.length) {
+    toast("Click Build Steps first.");
+    return;
+  }
+  if (idx <= 0) {
+    idx = -1;
+    live = { visited: 0, pruned: 0, edges: 0, best: 0 };
+    $("stepCount").textContent = "0";
+    $("miniStep").textContent = "0";
+    $("visitedCount").textContent = "0";
+    $("edgeChecks").textContent = "0";
+    $("pruneCount").textContent = "0";
+    $("bestLen").textContent = "0";
+    $("explain").innerHTML = "Back at the beginning. Press Step or Play.";
+    drawGraph();
+    drawSearchTree(-1);
+    updateProgress();
+    return;
+  }
+  renderStep(idx - 1);
+}
+
+function replayBestPath() {
+  pause();
+  if (replayTimer) { clearInterval(replayTimer); replayTimer = null; }
+
+  let best = lastBestPath && lastBestPath.length ? lastBestPath : bestPathGlobal;
+  if ((!best || best.length < 2) && steps.length) {
+    for (let i = steps.length - 1; i >= 0; i--) {
+      if (steps[i].best && steps[i].best.length >= 2) {
+        best = steps[i].best;
+        break;
+      }
+    }
+  }
+
+  if (!best || best.length < 2) {
+    toast("No best path available yet. Build and run steps first.");
+    return;
+  }
+
+  let i = 1;
+  drawGraph(best.slice(0, 1), best[0], false, best);
+  $("explain").innerHTML = `Replaying best path: <b>${best.join(" → ")}</b>.`;
+  replayTimer = setInterval(() => {
+    drawGraph(best.slice(0, i + 1), best[i], false, best);
+    i++;
+    if (i >= best.length) {
+      clearInterval(replayTimer);
+      replayTimer = null;
+      $("explain").innerHTML = `Best path replay finished: <b>${best.join(" → ")}</b>. Length = <b>${best.length - 1}</b>.`;
+    }
+  }, Math.max(160, Number($("speed").value) * 0.75));
+}
+
+
+const quizQuestions = [
+  {
+    question: "Which statements correctly describe the Longest Path decision problem?",
+    type: "multi",
+    options: [
+      "Input includes a graph G, start vertex s, target vertex t, and integer k.",
+      "The path must be simple, meaning no repeated vertices.",
+      "The goal is to find the shortest path from s to t.",
+      "The question asks whether there is a path from s to t of length at least k."
+    ],
+    answer: [0, 1, 3],
+    explanation: "Longest Path asks whether a simple s-to-t path of length at least k exists. Shortest path is a different polynomial-time problem."
+  },
+  {
+    question: "What is the certificate used to show Longest Path is in NP?",
+    type: "single",
+    options: [
+      "A sorted list of all edges in the graph.",
+      "A proposed simple path from s to t.",
+      "The adjacency matrix only.",
+      "A topological ordering of the graph."
+    ],
+    answer: [1],
+    explanation: "A proposed path is the certificate. The verifier checks start/end, valid edges, no repeated vertices, and length at least k in polynomial time."
+  },
+  {
+    question: "In the reduction from Hamiltonian Path to Longest Path, what value is k set to?",
+    type: "single",
+    options: [
+      "|E|",
+      "|V|",
+      "|V| - 1",
+      "2|V|"
+    ],
+    answer: [2],
+    explanation: "A path that visits all |V| vertices exactly once has |V|-1 edges, so k is set to |V|-1."
+  },
+  {
+    question: "Which parts are required for a correct NP-completeness proof?",
+    type: "multi",
+    options: [
+      "Show the problem is in NP.",
+      "Give a polynomial-time reduction from a known NP-complete problem.",
+      "Prove both forward and backward directions of the reduction.",
+      "Show an implementation in JavaScript is fast."
+    ],
+    answer: [0, 1, 2],
+    explanation: "The proof needs NP membership, polynomial-time reduction, correctness in both directions, and polynomiality. JavaScript speed is not part of the proof."
+  },
+  {
+    question: "What is the practical algorithm used in this tool?",
+    type: "single",
+    options: [
+      "DFS backtracking with a visited set and pruning.",
+      "Dijkstra’s algorithm.",
+      "Merge sort.",
+      "Binary search."
+    ],
+    answer: [0],
+    explanation: "The practical solver uses DFS backtracking: it tries unvisited neighbors, keeps a current path, and prunes impossible branches."
+  },
+  {
+    question: "Which statements about DFS with pruning are true?",
+    type: "multi",
+    options: [
+      "It is still exponential in the worst case.",
+      "It can reduce the number of explored states in practice.",
+      "It proves Longest Path is polynomial-time solvable.",
+      "It can be exact if allowed to finish."
+    ],
+    answer: [0, 1, 3],
+    explanation: "Pruning improves practical performance but does not remove the exponential worst case. The method remains exact when it completes."
+  },
+  {
+    question: "Why can DAG longest path be solved in polynomial time?",
+    type: "single",
+    options: [
+      "Because DAGs have no directed cycles and can be processed in topological order.",
+      "Because all graph problems are easy on DAGs.",
+      "Because DFS never branches in a DAG.",
+      "Because the longest path in a DAG is always one edge."
+    ],
+    answer: [0],
+    explanation: "A DAG has a topological order. Dynamic programming over that order computes longest paths efficiently."
+  },
+  {
+    question: "Why can a greedy approach fail for Longest Path?",
+    type: "multi",
+    options: [
+      "A locally good next move can block a longer path later.",
+      "The longest simple path depends on future choices.",
+      "Greedy always checks all possible paths.",
+      "Backtracking is useful because it explores alternatives."
+    ],
+    answer: [0, 1, 3],
+    explanation: "Greedy can get trapped by a local choice. Backtracking is needed because the best path may require trying alternatives."
+  }
+];
+
+function arraysEqualAsSets(a, b) {
+  if (a.length !== b.length) return false;
+  const A = [...a].sort((x, y) => x - y);
+  const B = [...b].sort((x, y) => x - y);
+  return A.every((v, i) => v === B[i]);
+}
+
+function renderQuiz() {
+  const container = $("quizContainer");
+  if (!container) return;
+  $("quizTotal").textContent = quizQuestions.length;
+  container.innerHTML = quizQuestions.map((q, qi) => {
+    const inputType = q.type === "single" ? "radio" : "checkbox";
+    const optionsHtml = q.options.map((opt, oi) => `
+      <label class="quiz-option">
+        <input type="${inputType}" name="quiz-${qi}" value="${oi}">
+        <span>${escapeHtml(opt)}</span>
+      </label>
+    `).join("");
+
+    return `
+      <div class="quiz-card" data-quiz-index="${qi}">
+        <h3>Q${qi + 1}. ${escapeHtml(q.question)}</h3>
+        <p class="help">${q.type === "single" ? "Choose one answer." : "Select all correct answers."}</p>
+        <div class="quiz-options">${optionsHtml}</div>
+        <div class="quiz-actions">
+          <button onclick="checkQuizQuestion(${qi})">Check Answer</button>
+          <button class="secondary" onclick="clearQuizQuestion(${qi})">Clear</button>
+        </div>
+        <div class="quiz-feedback" id="quizFeedback-${qi}">Waiting for your answer.</div>
+      </div>
+    `;
+  }).join("");
+  updateQuizScore();
+}
+
+function selectedQuizAnswers(qi) {
+  return Array.from(document.querySelectorAll(`input[name="quiz-${qi}"]:checked`)).map(x => Number(x.value));
+}
+
+function checkQuizQuestion(qi) {
+  const q = quizQuestions[qi];
+  const selected = selectedQuizAnswers(qi);
+  const feedback = $(`quizFeedback-${qi}`);
+  if (!feedback) return false;
+
+  if (!selected.length) {
+    feedback.className = "quiz-feedback wrong";
+    feedback.innerHTML = "Choose at least one answer first.";
+    updateQuizScore();
+    return false;
+  }
+
+  const correct = arraysEqualAsSets(selected, q.answer);
+  feedback.className = correct ? "quiz-feedback correct" : "quiz-feedback wrong";
+  feedback.innerHTML = `${correct ? "<b>Correct.</b>" : "<b>Not correct.</b>"} ${escapeHtml(q.explanation)}`;
+  updateQuizScore();
+  return correct;
+}
+
+function clearQuizQuestion(qi) {
+  document.querySelectorAll(`input[name="quiz-${qi}"]`).forEach(input => input.checked = false);
+  const feedback = $(`quizFeedback-${qi}`);
+  if (feedback) {
+    feedback.className = "quiz-feedback";
+    feedback.textContent = "Waiting for your answer.";
+  }
+  updateQuizScore();
+}
+
+function checkAllQuiz() {
+  let correct = 0;
+  quizQuestions.forEach((_, qi) => {
+    if (checkQuizQuestion(qi)) correct++;
+  });
+  toast(`Quiz checked: ${correct}/${quizQuestions.length} correct.`);
+}
+
+function resetQuiz() {
+  quizQuestions.forEach((_, qi) => clearQuizQuestion(qi));
+  toast("Quiz reset.");
+}
+
+function updateQuizScore() {
+  let correct = 0;
+  quizQuestions.forEach((q, qi) => {
+    const selected = selectedQuizAnswers(qi);
+    if (selected.length && arraysEqualAsSets(selected, q.answer)) correct++;
+  });
+  if ($("quizScore")) $("quizScore").textContent = correct;
+}
+
+
+document.addEventListener("keydown", (e) => {
+  const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    if (timer) pause(); else play();
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    stepOnce();
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    stepBack();
+  } else if (e.key.toLowerCase() === "r") {
+    e.preventDefault();
+    resetAll(true);
+  }
+});
+
+
+function stepOnce() {
+  if (!steps.length) {
+    toast("Click Build Steps first.");
+    return;
+  }
+  if (idx >= steps.length - 1) {
+    updateStatus("Animation is already finished.");
+    return;
+  }
+  renderStep(idx + 1);
+}
+
+function play() {
+  if (!steps.length) {
+    toast("Click Build Steps first.");
+    return;
+  }
+  if (idx >= steps.length - 1) {
+    idx = -1;
+    live = { visited: 0, pruned: 0, edges: 0, best: 0 };
+    updateProgress();
+  }
+  pause();
+  timer = setInterval(() => {
+    if (idx >= steps.length - 1) pause();
+    else stepOnce();
+  }, Number($("speed").value));
+}
+
+function pause() {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  $(id).classList.add("active");
+  btn.classList.add("active");
+  if (id === "compare") { computeComparison(); drawGrowthChart(); }
+  if (id === "proof") updateReductionDiagram();
+}
+
+function computeComparison() {
+  if (!graph.V.length) parseGraph();
+  const s = $("startInput").value.trim();
+  const t = $("targetInput").value.trim();
+  const k = Number($("kInput").value);
+  if (!graph.V.includes(s) || !graph.V.includes(t)) return;
+
+  let bruteStates = 0, bruteEdges = 0, bruteBest = [];
+  function brute(u, path, visited) {
+    bruteStates++;
+    if (u === t) {
+      if (path.length > bruteBest.length) bruteBest = [...path];
+      return;
+    }
+    for (const v of graph.adj[u] || []) {
+      bruteEdges++;
+      if (!visited.has(v)) {
+        visited.add(v);
+        path.push(v);
+        brute(v, path, visited);
+        path.pop();
+        visited.delete(v);
+      }
+    }
+  }
+
+  let prunedStates = 0, prunedEdges = 0, prunedCuts = 0, prunedBest = [];
+  function pruned(u, path, visited) {
+    prunedStates++;
+    if (u === t) {
+      if (path.length > prunedBest.length) prunedBest = [...path];
+      return;
+    }
+    const reachable = countReachableUnvisited(u, visited);
+    if ((path.length - 1) + reachable < k) {
+      prunedCuts++;
+      return;
+    }
+    for (const v of graph.adj[u] || []) {
+      prunedEdges++;
+      if (!visited.has(v)) {
+        visited.add(v);
+        path.push(v);
+        pruned(v, path, visited);
+        path.pop();
+        visited.delete(v);
+      }
+    }
+  }
+
+  brute(s, [s], new Set([s]));
+  pruned(s, [s], new Set([s]));
+
+  $("bruteResult").innerHTML = `
+    <div class="result-line"><span>States explored</span><b>${bruteStates}</b></div>
+    <div class="result-line"><span>Edge checks</span><b>${bruteEdges}</b></div>
+    <div class="result-line"><span>Best length</span><b>${Math.max(0, bruteBest.length - 1)}</b></div>
+    <div class="result-line"><span>Decision for k=${k}</span><b class="${bruteBest.length - 1 >= k ? "ok" : "badText"}">${bruteBest.length - 1 >= k ? "YES" : "NO"}</b></div>
+    <div class="result-line"><span>Best path</span><b>${bruteBest.join(" → ") || "none"}</b></div>
+  `;
+
+  $("prunedResult").innerHTML = `
+    <div class="result-line"><span>States explored</span><b>${prunedStates}</b></div>
+    <div class="result-line"><span>Edge checks</span><b>${prunedEdges}</b></div>
+    <div class="result-line"><span>Pruned branches</span><b>${prunedCuts}</b></div>
+    <div class="result-line"><span>Best length</span><b>${Math.max(0, prunedBest.length - 1)}</b></div>
+    <div class="result-line"><span>Decision for k=${k}</span><b class="${prunedBest.length - 1 >= k ? "ok" : "badText"}">${prunedBest.length - 1 >= k ? "YES" : "NO"}</b></div>
+  `;
+}
+
+function drawGrowthChart() {
+  const svg = $("growthSvg");
+  svg.innerHTML = "";
+  const W = 900, H = 260, P = 42;
+  const vals = [];
+  for (let n = 1; n <= 10; n++) {
+    vals.push({
+      n,
+      brute: Math.min(900, Math.pow(2, n)),
+      practical: Math.min(900, Math.pow(1.5, n))
+    });
+  }
+  const maxY = 900;
+  const x = n => P + (n - 1) * (W - 2 * P) / 9;
+  const y = v => H - P - (v / maxY) * (H - 2 * P);
+
+  const axis = makeSvgEl("path", { d: `M${P} ${P} V${H-P} H${W-P}`, stroke: "rgba(255,255,255,.35)", fill: "none", "stroke-width": 2 });
+  svg.appendChild(axis);
+
+  for (let i = 0; i <= 4; i++) {
+    const yy = P + i * (H - 2 * P) / 4;
+    svg.appendChild(makeSvgEl("line", { x1:P, y1:yy, x2:W-P, y2:yy, stroke:"rgba(255,255,255,.07)" }));
+  }
+
+  function pathFor(key) {
+    return vals.map((d, i) => `${i ? "L" : "M"}${x(d.n)} ${y(d[key])}`).join(" ");
+  }
+
+  const brutePath = makeSvgEl("path", { d: pathFor("brute"), stroke:"var(--red)", "stroke-width":5, fill:"none", "stroke-linecap":"round" });
+  const practicalPath = makeSvgEl("path", { d: pathFor("practical"), stroke:"var(--green)", "stroke-width":5, fill:"none", "stroke-linecap":"round" });
+  svg.appendChild(brutePath);
+  svg.appendChild(practicalPath);
+
+  const txt = (text, xx, yy, color="#d9edff", size=14, weight=700) => {
+    const el = makeSvgEl("text", { x:xx, y:yy, fill:color, "font-size":size, "font-weight":weight });
+    el.textContent = text;
+    svg.appendChild(el);
+  };
+
+  txt("Growth curve: worst-case exponential — brute force O(2ⁿ) vs pruned O(1.5ⁿ) approx.", 56, 30, "#fff", 15, 900);
+  txt("Brute force ~2ⁿ", 660, 74, "var(--red)", 14, 900);
+  txt("DFS + pruning ~1.5ⁿ (still exponential)", 530, 183, "var(--green)", 14, 900);
+  txt("input size n", 410, 245, "var(--muted)", 13, 700);
+  txt("operations", 7, 45, "var(--muted)", 13, 700);
+
+  vals.forEach(d => {
+    const c1 = makeSvgEl("circle", { cx:x(d.n), cy:y(d.brute), r:4, fill:"var(--red)" });
+    const c2 = makeSvgEl("circle", { cx:x(d.n), cy:y(d.practical), r:4, fill:"var(--green)" });
+    svg.appendChild(c1); svg.appendChild(c2);
+  });
+}
+
+document.getElementById("algo").addEventListener("change", () => {
+  setPseudo(0);
+  resetAll(true);
+});
+
+document.getElementById("speed").addEventListener("input", () => {
+  if (timer) play();
+});
+
+document.getElementById("edgeInput").addEventListener("input", () => {
+  parseGraph();
+  updateComplexityGauge();
+});
+document.getElementById("kInput").addEventListener("input", updateComplexityGauge);
+
+
+loadPreset();
+renderQuiz();
+resetAll(true);
+</script>
+</body>
+</html>
