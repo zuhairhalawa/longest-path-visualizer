@@ -22,8 +22,7 @@ This problem is important because it is NP-complete in general graphs, while the
 
 Open the GitHub Pages link for this repository:
 
-https://Avotru.github.io/longest-path-visualizer/
-
+https://zuhairhalawa.github.io/longest-path-visualizer/
 
 ---
 
@@ -225,12 +224,14 @@ Enter one edge per line.
 
 Example:
 
+```text
 A B
 B C
 C D
 D F
 A E
 E F
+```
 
 This creates an undirected graph with edges:
 
@@ -240,21 +241,25 @@ For DAG mode, the edge direction is interpreted as written.
 
 Example:
 
+```text
 A B
 A C
 B D
 C D
 D E
 E F
+```
 
 means:
 
+```text
 A → B
 A → C
 B → D
 C → D
 D → E
 E → F
+```
 
 ---
 
@@ -277,8 +282,10 @@ index.html
 
 ## Project Files
 
+```text
 index.html      Main interactive tool
 README.md       Project description and usage guide
+```
 
 ---
 
